@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next TZX/Audio Player</title>
+    <style>
+        :root {
+            --primary-color: #00ff00;
+            --background-color: #333333;
+            --text-color: #FFFFFF;
+            --secondary-bg: #222222;
+            --accent-color: #ff00ff;
+            --highlight-color: #ffff00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .dropzone {
+            flex: 0 0 auto;
+        }
+
+        .player {
+            flex: 0 0 auto;
+        }
+
+        .playlist {
+            flex: 1 1 auto;
+            overflow-y: auto;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+        }
+
+        .btn i {
+            font-size: 24px;
+        }
+
+        .seek-bar {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .seek-bar input {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: #4a4a4a;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .seek-bar input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .playlist {
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            margin: 5px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .playlist-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .playlist-item.active {
+            background-color: var(--primary-color);
+        }
+
+        .dropzone {
+            border: 2px dashed var(--accent-color);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            background-color: var(--secondary-bg);
+        }
+
+        .dropzone.dragover {
+            background-color: rgba(33, 150, 243, 0.1);
+            border-color: #fff;
+        }
+
+        .dropzone i {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .dropzone p {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .delete-btn {
+            color: #ff0000;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .delete-btn:hover {
+            opacity: 1;
+        }
+
+        .timer {
+            font-family: monospace;
+            font-size: 1.2em;
+            color: var(--text-color);
+            margin-top: 10px;
+        }
+
+        .playlist {
+            padding: 20px;
+        }
+
+        .playlist h3 {
+            margin: 0 0 15px 0;
+            color: var(--text-color);
+        }
+
+        .playlist-item {
+            padding: 10px 15px;
+            margin: 5px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .playlist-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .playlist-item.active {
+            background-color: var(--primary-color);
+        }
+
+        .dropzone {
+            border: 2px dashed var(--accent-color);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            background-color: var(--secondary-bg);
+        }
+
+        .dropzone.dragover {
+            background-color: rgba(33, 150, 243, 0.1);
+            border-color: #fff;
+        }
+
+        .dropzone i {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .dropzone p {
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .loading-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            background: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .loading-content i {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="dropzone" id="dropzone">
+            <i class="fas fa-upload"></i>
+            <p>Drop TZX files here or click to upload</p>
+            <input type="file" id="fileInput" accept=".tzx" style="display: none;">
+        </div>
+
+        <div class="player">
+            <div class="controls">
+                <button class="btn" id="playBtn">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="btn" id="stopBtn">
+                    <i class="fas fa-stop"></i>
+                </button>
+            </div>
+            <div class="seek-bar">
+                <input type="range" min="0" max="100" value="0" id="seekBar">
+            </div>
+            <div class="timer">
+                <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+            </div>
+        </div>
+        
+        <div class="playlist" id="playlist">
+            <h3>Available Files</h3>
+            <div id="playlist-items">
+                <!-- Files will be loaded here -->
+            </div>
+        </div>
+
+        <div id="loadingDialog" class="loading-dialog" style="display: none;">
+            <div class="loading-content">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p id="loadingMessage"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isPlaying = false;
+        let currentPosition = 0;
+        let audioDuration = 100;
+
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const seekBar = document.getElementById('seekBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateSeekBar() {
+            fetch('/status', {
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'X-Status-Check': 'true'  // Add custom header for status checks
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    isPlaying = data.is_playing;
+                    currentPosition = data.position;
+                    seekBar.value = currentPosition;
+                    currentTimeDisplay.textContent = formatTime(currentPosition);
+                    playBtn.innerHTML = isPlaying ? 
+                        '<i class="fas fa-pause"></i>' : 
+                        '<i class="fas fa-play"></i>';
+                })
+                .catch(error => {
+                    // Only log non-status check errors
+                    if (!error.message.includes('Failed to fetch')) {
+                        console.error('Error:', error);
+                    }
+                });
+        }
+
+        setInterval(updateSeekBar, 500);  // Changed from 100 to 500ms
+
+        playBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                fetch('/play', { 
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    isPlaying = true;
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    loadDuration();  // Load duration when starting playback
+                });
+            } else {
+                fetch('/pause', { 
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    isPlaying = false;
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                });
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            fetch('/stop', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                isPlaying = false;
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                currentPosition = 0;
+                currentTimeDisplay.textContent = '0:00';
+                seekBar.value = 0;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        seekBar.addEventListener('input', () => {
+            currentTimeDisplay.textContent = formatTime(seekBar.value);
+        });
+
+        seekBar.addEventListener('change', () => {
+            fetch(`/seek/${seekBar.value}`, { method: 'POST' });
+        });
+
+        function loadDuration() {
+            fetch('/duration')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.duration && !isNaN(data.duration)) {
+                        audioDuration = data.duration;
+                        seekBar.max = audioDuration;
+                        durationDisplay.textContent = formatTime(audioDuration);
+                    } else {
+                        console.error('Invalid duration received:', data);
+                        durationDisplay.textContent = '0:00';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading duration:', error);
+                    durationDisplay.textContent = '0:00';
+                });
+        }
+
+        document.querySelectorAll('.playlist-item').forEach(item => {
+            item.onclick = () => {
+                fetch('/select/' + item.textContent, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
+                            item.classList.add('active');
+                            loadDuration();  // Load duration after selecting new file
+                            currentTimeDisplay.textContent = '0:00';
+                        }
+                    });
+            };
+        });
+
+        function loadPlaylist() {
+            console.log("Loading playlist..."); // Debug log
+            fetch('/files')
+                .then(response => response.json())
+                .then(files => {
+                    console.log("Received files:", files); // Debug log
+                    const playlistContainer = document.getElementById('playlist-items');
+                    playlistContainer.innerHTML = '';
+                    
+                    if (files.length === 0) {
+                        playlistContainer.innerHTML = '<div class="playlist-item">No WAV files found</div>';
+                        return;
+                    }
+                    
+                    files.forEach(file => {
+                        const item = document.createElement('div');
+                        item.className = 'playlist-item';
+                        
+                        // Create filename span
+                        const fileSpan = document.createElement('span');
+                        fileSpan.textContent = file;
+                        fileSpan.onclick = () => {
+                            fetch('/select/' + file, { method: 'POST' })
+                                .then(() => {
+                                    document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
+                                    item.classList.add('active');
+                                    loadDuration();
+                                });
+                        };
+                        
+                        // Create delete button
+                        const deleteBtn = document.createElement('i');
+                        deleteBtn.className = 'fas fa-trash delete-btn';
+                        deleteBtn.onclick = (e) => {
+                            e.stopPropagation(); // Prevent triggering the file selection
+                            if (confirm('Are you sure you want to delete this file?')) {
+                                fetch('/delete/' + file, { method: 'POST' })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            loadPlaylist(); // Refresh the list
+                                        } else {
+                                            alert('Error deleting file: ' + (data.error || 'Unknown error'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error deleting file');
+                                    });
+                            }
+                        };
+                        
+                        item.appendChild(fileSpan);
+                        item.appendChild(deleteBtn);
+                        playlistContainer.appendChild(item);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error loading playlist:", error);
+                    const playlistContainer = document.getElementById('playlist-items');
+                    playlistContainer.innerHTML = '<div class="playlist-item">Error loading files</div>';
+                });
+        }
+
+        // Make sure we call loadPlaylist when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPlaylist();
+            loadDuration();
+        });
+
+        // File upload handling
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (!file.name.toLowerCase().endsWith('.tzx')) {
+                alert('Please select a TZX file');
+                return;
+            }
+
+            // Show loading dialog before starting upload
+            showLoadingDialog(`Converting ${file.name}...`);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoadingDialog(); // Hide dialog when complete
+                if (data.success) {
+                    loadPlaylist();  // Refresh the playlist
+                } else {
+                    alert('Upload failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                hideLoadingDialog(); // Hide dialog on error
+                console.error('Upload error:', error);
+                alert('Upload failed');
+            });
+        }
+
+        //
+        function handleFileUpload(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            showLoadingDialog(`Converting ${file.name}...`);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    hideLoadingDialog();
+                    // Refresh the file list
+                    updateFileList();
+                } else {
+                    hideLoadingDialog();
+                    alert(data.error || 'Conversion failed');
+                }
+            })
+            .catch(error => {
+                hideLoadingDialog();
+                alert('Upload failed: ' + error);
+            });
+        }
+
+        // Function to update the file list
+        function updateFileList() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(files => {
+                    // You can implement file list update logic here
+                    console.log('Files updated:', files);
+                })
+                .catch(error => console.error('Error updating file list:', error));
+        }
+
+        function showLoadingDialog(message) {
+            const dialog = document.getElementById('loadingDialog');
+            const messageEl = document.getElementById('loadingMessage');
+            messageEl.textContent = message;
+            dialog.style.display = 'flex';
+        }
+
+        function hideLoadingDialog() {
+            const dialog = document.getElementById('loadingDialog');
+            dialog.style.display = 'none';
+        }
+    </script>
+</body>
+</html> 
